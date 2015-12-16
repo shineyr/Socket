@@ -19,6 +19,7 @@ int main(void)
 {
 	/*声明服务器监听描述符和客户链接描述符*/
 	int i , n , ret , maxi , maxfd , listenfd , connfd , sockfd;
+
 	socklen_t clilen;
 
 	/*套接字选项*/
@@ -38,9 +39,7 @@ int main(void)
 	char buf[MAX_LINE];
 
 	/*UserInfo*/
-	User user;
-	strcpy(user.userName , "***");
-	user.speak = 1;
+	User user;	
 
 	//建立在线用户列表
 	userList = NULL;
@@ -137,8 +136,6 @@ int main(void)
 			if(--nready <= 0)
 				continue;
 		}//if
-		
-		printf("链接个数%d\n" , maxi);
 		/*接下来逐个处理连接描述符*/
 		for(i=0 ; i<=maxi ; ++i)
 		{
@@ -165,10 +162,7 @@ int main(void)
 					printf("来自%s的退出请求！\n", inet_ntoa(message.sendAddr.sin_addr));					
 				}//if				
 				else{
-					memcpy(&message , buf , sizeof(buf));
-					//为当前链接用户赋值 其描述符和IP地址
-					user.sockfd = sockfd;
-					user.userAddr = cliaddr;
+					memcpy(&message , buf , sizeof(buf));				
 					printf("server msgType = %d\n" , message.msgType);
 					switch(message.msgType)
 					{
@@ -185,12 +179,12 @@ int main(void)
 							memcpy(buf , &message , sizeof(message));						
 							/*发送操作结果消息*/
 							send(sockfd , buf , sizeof(buf) , 0);	
-							continue;
+							break;
 						}//case
 					case LOGIN:
 						{
 							printf("来自%s的登陆请求！\n", inet_ntoa(message.sendAddr.sin_addr));
-							ret = loginUser(&message , sockfd);
+							ret = loginUser(&message , sockfd);							
 							memset(&message , 0 , sizeof(message));
 							message.msgType = RESULT;
 							message.msgRet = ret;
@@ -200,12 +194,15 @@ int main(void)
 							memcpy(buf , &message , sizeof(message));						
 							/*发送操作结果消息*/
 							send(sockfd , buf , sizeof(buf) , 0);
-							continue;
+							break;
 						}//case			
 					case GROUP_CHAT:
-						
-						break;
-
+						{
+							printf("来自%s的群聊请求！\n",message.sendName);
+							/*转到群聊处理函数*/
+							groupChat(&message);
+							break;
+						}
 					case PERSONAL_CHAT:
 						
 						break;
@@ -213,14 +210,26 @@ int main(void)
 					case VIEW_USER_LIST:
 						
 						break;
+					case EXIT:
+						/*用户退出聊天室*/
+						printf("用户%s退出聊天室！\n", message.sendName);
+						memset(&user , 0 , sizeof(user));
+						strcpy(user.userName , message.sendName);
+						deleteNode(userList , &user);
+						close(sockfd);
+						FD_CLR(sockfd , &allset);
+						client_sockfd[i] = -1;
 					default:
 						printf("unknown operation.\n");
 						break;
 					}//switch					
 				}//else				
-			}//if			
+			}//if
+			/*清除处理完的链接*/
+			close(sockfd);
+			FD_CLR(sockfd , &allset);
+			client_sockfd[i] = -1;			
 		}//for
-		printf("come here!\n");
 	}//for服务器接收请求死循环
 	close(listenfd);
 	return 0;

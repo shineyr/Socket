@@ -37,7 +37,7 @@
 #define LISTENEQ  6000
  
 /*预定义数据库名称*/
-#define DB_NAME "/home/yangrui/projects/Socket/select_chat/chatRome.db"
+#define DB_NAME "/home/yangrui/projects/Socket/ChatRome_select/chatRome.db"
 
 /*是否禁言标志*/
 enum SpeakFlag{
@@ -54,6 +54,7 @@ enum MessageType{
 	VIEW_USER_LIST,		/*查看在线列表*/
 	GROUP_CHAT,		/*群聊请求*/
 	PERSONAL_CHAT,		/*私聊请求*/
+	VIEW_RECORDS,		/*查看聊天记录请求*/
 	RESULT,				/*结果消息类型*/
 	UNKONWN				/*未知请求类型*/
 };
@@ -70,14 +71,17 @@ enum StateRet{
 	ALREADY_ONLINE		//已经在线
 };
 
+
 /*定义服务器 -- 客户端 消息传送结构体*/
 typedef struct _Message{
 	char content[2048];		/*针对聊天类型的消息，填充该字段*/
 	int msgType;	/*消息类型 即为MessageType中的值*/
 	int msgRet;		/*针对操作结果类型的消息，填充该字段*/
-	struct sockaddr_in sendAddr;
-	struct sockaddr_in recvAddr;	
-	char registerTime[20];	//针对注册操作类型的消息记录消息发送时间	
+	struct sockaddr_in sendAddr; /*发送者IP*/
+	struct sockaddr_in recvAddr;
+	char sendName[20]; /*发送者名称*/
+	char recvName[20]; /*接收者名称*/
+	char msgTime[20];  /*消息发送时间*/
 }Message;
 
 //用户信息结构体
@@ -89,4 +93,17 @@ typedef struct _User{
 	int speak;			//是否禁言标志
 	char registerTime[20];	//记录用户注册时间	
 }User;
+
+/*定义用户链表结构体*/
+typedef struct _ListNode{
+	User user;
+	struct _ListNode *next;
+}ListNode;
+
+
+/*定义在线用户链表*/
+ListNode *userList;
+
+extern char *stateMsg(int stateRet);
+extern void copyUser(User *user1 , User *user2);
 

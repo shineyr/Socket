@@ -37,8 +37,6 @@ int main(int argc , char *argv[])
         exit(1);
     }//if
 
-	while(1)
-	{	
 		 /*(1) 创建套接字*/
 		if((sockfd = socket(AF_INET , SOCK_STREAM , 0)) == -1)
 		{
@@ -64,8 +62,8 @@ int main(int argc , char *argv[])
 			exit(1);
 		}//if	
 
-		/*(4) 显示聊天室主界面*/
-
+		/*(4) 显示聊天室主界面*/		
+sign:
 		printf("sockfd = %d\n",sockfd);
 		mainInterface();	
 		setbuf(stdin,NULL); //是linux中的C函数，主要用于打开和关闭缓冲机制
@@ -92,6 +90,7 @@ int main(int argc , char *argv[])
 			memcpy(buf , &message , sizeof(message));	
 			send(sockfd , buf , sizeof(buf) , 0);	
 			registerUser(sockfd);
+			goto sign;
 			break;
 		case LOGIN:		/*登陆请求*/
 			memset(&message , 0 , sizeof(message));
@@ -102,12 +101,11 @@ int main(int argc , char *argv[])
 			/*向服务器发送登陆请求*/
 			memcpy(buf , &message , sizeof(message));
 			send(sockfd , buf , sizeof(buf) , 0);
-			ret = loginUser(sockfd);
-			close(sockfd);				
+			loginUser(sockfd);					
 			break;	
 		case HELP:		/*帮助请求，显示帮助界面*/
-            helpInterface();   
-			close(sockfd);                                                               
+            helpInterface(); 
+			goto sign;                                                                
 			break;
 		case EXIT:
 			close(sockfd);
@@ -116,9 +114,9 @@ int main(int argc , char *argv[])
 			break;
 		default:
 			printf("unknown operation.\n");
+			goto sign;
 			break;	
-		}//switch
-	}//while
+		}//switch		
 	close(sockfd);
 	return 0;	
 }

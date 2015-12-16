@@ -4,7 +4,7 @@ CC = gcc
 objects = client.o config.o register.o login.o interface.o chat.o
 
 server: $(objects)
-	cc -g -o client $(objects) -lsqlite3
+	cc -g -o client $(objects) -lsqlite3 -lpthread
 
 client.o: client.c config.h
 	cc -c client.c 

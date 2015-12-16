@@ -9,12 +9,12 @@
 /*声明全局变量 -- 在线用户链表*/
 extern ListNode *userList;
 
-/*********************************************
+/**************************************************
 函数名：loginUser
 功能：用户登陆函数实现
 参数：msg--用户发送的登陆消息 sockfd--套接字描述符
 返回值：成功登陆返回SUCCESS 否则返回异常类型
-**********************************************/
+****************************************************/
 int loginUser(Message *msg , int sockfd)
 {
 	int ret;
@@ -50,6 +50,7 @@ int loginUser(Message *msg , int sockfd)
 	ret = sqlite3_open(DB_NAME, &db);
 	if(ret != SQLITE_OK)
 	{
+		printf("unable open database.\n");
 		return FAILED;
 	}//if
 	printf("Opened database successfully.\n");
@@ -66,7 +67,8 @@ int loginUser(Message *msg , int sockfd)
 		ret = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
-		return FAILED;
+		printf("database select fail!\n");
+		return FAILED;		
 	}//if
 	/*执行*/
 	ret = sqlite3_step(stmt);
@@ -76,11 +78,15 @@ int loginUser(Message *msg , int sockfd)
 		ret = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
-		return SUCCESS;
+		ret = SUCCESS;
+		/*如果登陆操作成功，添加到在线用户链表*/
+		insertNode(userList , &user);
+		return ret;
 	}//while
 	/*销毁句柄，关闭数据库*/
 	sqlite3_finalize(stmt);
 	sqlite3_close(db);	
+	 
 	return FAILED;
 }
 

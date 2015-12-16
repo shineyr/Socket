@@ -52,6 +52,7 @@ int registerUser(Message *msg , int sockfd)
 	ret = sqlite3_open(DB_NAME, &db);
 	if(ret != SQLITE_OK)
 	{
+		printf("unable open database.\n");
 		return FAILED;
 	}//if
 	printf("Opened database successfully.\n");
@@ -66,6 +67,7 @@ int registerUser(Message *msg , int sockfd)
 		ret = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
+		printf("database select fail!\n");
 		return FAILED;
 	}//if
 	/*执行*/

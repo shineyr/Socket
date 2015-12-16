@@ -12,11 +12,11 @@
 参数：list--当前在线用户链表 elem--要插入的元素
 返回值：返回创建的链表
 ***************************************************/
-void insertNode(ListNode *list , User user)
+void insertNode(ListNode *list , User *user)
 {
 	/*建立新节点*/
 	ListNode *node = (ListNode *)calloc(1, sizeof(ListNode));
-	copyUser(&(node->user) , &user);
+	copyUser(&(node->user) , user);
 	node->next = NULL;
 	if(list == NULL)
 	{			
