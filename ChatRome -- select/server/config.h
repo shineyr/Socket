@@ -39,10 +39,10 @@
 /*预定义数据库名称*/
 #define DB_NAME "/home/yangrui/projects/Socket/ChatRome_select/chatRome.db"
 
-/*是否禁言标志*/
-enum SpeakFlag{
-	YES,
-	No
+/*标志*/
+enum Flag{
+	YES,	/*代表被禁言，也代表接收聊天记录文件*/
+	NO		/*代表没有被禁言，也代表直接显示聊天记录*/
 };
 
 /*定义服务器--客户端 消息传送类型*/
@@ -66,9 +66,12 @@ enum StateRet{
 	FAILED,  //失败
     DUPLICATEID, //重复的用户名
 	INVALID,	//不合法的用户名
-    IDNOTEXIST, //账号不存在
+    ID_NOT_EXIST, //账号不存在
     WRONGPWD, //密码错误
-	ALREADY_ONLINE		//已经在线
+	ALREADY_ONLINE,		//已经在线
+	ID_NOT_ONLINE,	//账号不在线
+	ALL_NOT_ONLINE, 	//无人在线
+	MESSAGE_SELF	//消息对象不能选择自己
 };
 
 
@@ -104,6 +107,25 @@ typedef struct _ListNode{
 /*定义在线用户链表*/
 ListNode *userList;
 
+/*config.c文件函数声明*/
 extern char *stateMsg(int stateRet);
 extern void copyUser(User *user1 , User *user2);
 
+/*chat.c文件函数声明*/
+extern void enterChat(int *fd);
+extern int groupChat(Message *msg , int sockfd);
+extern int personalChat(Message *msg , int sockfd);
+extern int viewUserList(Message *msg , int sockfd);
+extern int viewRecords(Message *msg , int sockfd);
+
+/*list.c文件函数声明*/
+extern void insertNode(ListNode *list , User *user);
+extern int isOnLine(ListNode *list , User *user);
+extern void deleteNode(ListNode *list , User *user);
+extern void displayList(ListNode *list);
+
+/*login.c文件函数声明*/
+extern int loginUser(Message *msg , int sockfd);
+
+/*register.c文件函数声明*/
+extern int registerUser(Message *msg , int sockfd);

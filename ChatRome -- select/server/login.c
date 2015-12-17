@@ -43,7 +43,7 @@ int loginUser(Message *msg , int sockfd)
 	printf("user.password = %s\n" , user.password);
 
 	/*查看在线用户列表，该用户是否已在线*/
-	if(isOnLine(userList , user) == 1)
+	if(isOnLine(userList , &user) == 1)
 		return ALREADY_ONLINE;
 
 	/*（1）打开数据库*/

@@ -38,10 +38,10 @@ void insertNode(ListNode *list , User *user)
 参数：list--当前在线用户链表 elem--要查看的用户元素
 返回值：true or false
 ***************************************************/
-int isOnLine(ListNode *list , User user)
+int isOnLine(ListNode *list , User *user)
 {
 	ListNode *p = list , *pre = p;
-	while(p!=NULL && strcmp(p->user.userName , user.userName) != 0)
+	while(p!=NULL && strcmp(p->user.userName , (*user).userName) != 0)
 	{
 		pre = p;
 		p = p->next;
@@ -59,13 +59,13 @@ int isOnLine(ListNode *list , User user)
 参数：list--当前在线用户链表 elem--要删除的元素
 返回值：返回创建的链表
 *****************************************************/
-void deleteNode(ListNode *list , User user)
+void deleteNode(ListNode *list , User *user)
 {
 	if(list == NULL)
 		return;
 
 	ListNode *p = list , *pre = p;
-	while(p!=NULL && strcmp(p->user.userName , user.userName) != 0)
+	while(p!=NULL && strcmp(p->user.userName , (*user).userName) != 0)
 	{
 		pre = p;
 		p = p->next;

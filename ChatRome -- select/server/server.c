@@ -22,6 +22,8 @@ int main(void)
 
 	socklen_t clilen;
 
+	pthread_t pid;
+
 	/*套接字选项*/
 	int opt = 1;
  
@@ -173,12 +175,12 @@ int main(void)
 							memset(&message , 0 , sizeof(message));
 							message.msgType = RESULT;
 							message.msgRet = ret;
-							strcpy(message.content , stateMsg(ret));
-							printf("%s\n",message.content);	
+							strcpy(message.content , stateMsg(ret));		
 							memset(buf , 0 , MAX_LINE);
 							memcpy(buf , &message , sizeof(message));						
 							/*发送操作结果消息*/
-							send(sockfd , buf , sizeof(buf) , 0);	
+							send(sockfd , buf , sizeof(buf) , 0);
+							printf("注册：%s\n", stateMsg(ret));	
 							break;
 						}//case
 					case LOGIN:
@@ -188,37 +190,17 @@ int main(void)
 							memset(&message , 0 , sizeof(message));
 							message.msgType = RESULT;
 							message.msgRet = ret;
-							strcpy(message.content , stateMsg(ret));
-							printf("%s\n",message.content);	
+							strcpy(message.content , stateMsg(ret));							
 							memset(buf , 0 , MAX_LINE);
 							memcpy(buf , &message , sizeof(message));						
 							/*发送操作结果消息*/
 							send(sockfd , buf , sizeof(buf) , 0);
+							printf("登录：%s\n", stateMsg(ret));
+							/*进入服务器处理聊天界面*/
+							enterChat(&sockfd);
+							//pthread_create(&pid , NULL , (void *)enterChat , (void *)&sockfd);					
 							break;
 						}//case			
-					case GROUP_CHAT:
-						{
-							printf("来自%s的群聊请求！\n",message.sendName);
-							/*转到群聊处理函数*/
-							groupChat(&message);
-							break;
-						}
-					case PERSONAL_CHAT:
-						
-						break;
-					
-					case VIEW_USER_LIST:
-						
-						break;
-					case EXIT:
-						/*用户退出聊天室*/
-						printf("用户%s退出聊天室！\n", message.sendName);
-						memset(&user , 0 , sizeof(user));
-						strcpy(user.userName , message.sendName);
-						deleteNode(userList , &user);
-						close(sockfd);
-						FD_CLR(sockfd , &allset);
-						client_sockfd[i] = -1;
 					default:
 						printf("unknown operation.\n");
 						break;

@@ -30,7 +30,7 @@ char *stateMsg(int stateRet)
 	case INVALID:	//不合法的用户名
 		return "不合法输入！\n";
 		break;    
-	case IDNOTEXIST: //账号不存在
+	case ID_NOT_EXIST: //账号不存在
 		return "账号不存在！\n";
 		break;
     case WRONGPWD: //密码错误
@@ -39,6 +39,15 @@ char *stateMsg(int stateRet)
 	case ALREADY_ONLINE:
 		return "该用户已在线！\n";
 		break;
+	case ID_NOT_ONLINE:
+		return "该用户不在线！\n";
+		break;
+	case ALL_NOT_ONLINE:
+		return "无人在线！\n";
+		break;
+	case MESSAGE_SELF:   //消息对象不能选择自己
+		return "不能给自己发送消息\n";
+		break;	
 	default:
 		return "未知操作结果！\n";
 		break;
