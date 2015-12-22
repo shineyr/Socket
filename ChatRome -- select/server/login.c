@@ -39,8 +39,6 @@ int loginUser(Message *msg , int sockfd)
 	memcpy(&user , buf , sizeof(buf));
 	user.userAddr = (*msg).sendAddr;
 	user.sockfd = sockfd;
-	printf("user.userName = %s\n" , user.userName);	
-	printf("user.password = %s\n" , user.password);
 
 	/*查看在线用户列表，该用户是否已在线*/
 	if(isOnLine(userList , &user) == 1)
@@ -53,13 +51,10 @@ int loginUser(Message *msg , int sockfd)
 		printf("unable open database.\n");
 		return FAILED;
 	}//if
-	printf("Opened database successfully.\n");
 
 	/*（2）检查登陆用户名和密码*/
 	memset(sql , 0 , sizeof(sql));
 	sprintf(sql , "select * from User where userName='%s' and password='%s';",user.userName , user.password);
-	
-	printf("查询语句：sql = %s\n",sql);
 	
 	ret = sqlite3_prepare(db , sql , strlen(sql) , &stmt , &tail);	
 	if(ret != SQLITE_OK)
@@ -80,7 +75,7 @@ int loginUser(Message *msg , int sockfd)
 		sqlite3_close(db);
 		ret = SUCCESS;
 		/*如果登陆操作成功，添加到在线用户链表*/
-		insertNode(userList , &user);
+		userList = insertNode(userList , &user);
 		return ret;
 	}//while
 	/*销毁句柄，关闭数据库*/

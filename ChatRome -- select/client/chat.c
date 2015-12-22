@@ -53,7 +53,10 @@ void recvMsg(int *sockfd)
 			printf("\n%s\n", str);
 			break;
 		case VIEW_RECORDS:
-			printf("你和%s的聊天记录：\n", message.recvName);
+			if(strcmp(message.recvName , "") == 0)
+				printf("你参与的群消息记录：\n\n");			
+			else
+				printf("你和%s的聊天记录：\n\n", message.recvName);
 			printf("%s\n" , message.content);
 			break;
 		case RESULT:
@@ -129,9 +132,12 @@ void enterChat(User *user , int sockfd)
 			setbuf(stdin , NULL);
 			scanf("%s" , str);
 			strcpy(message.recvName , str);
+
 			printf("请输入聊天内容：\n");
-			setbuf(stdin , NULL);
-			scanf("%s" , message.content);
+			setbuf(stdin , NULL);			
+			fgets(message.content , MAX_LINE , stdin);
+			(message.content)[strlen(message.content) - 1] = '\0';
+
 			/*获得当前时间*/
 			time(&timep);
 			strcpy(message.msgTime , ctime(&timep));
@@ -141,9 +147,12 @@ void enterChat(User *user , int sockfd)
 		case 3: /*群聊*/
 			message.msgType = GROUP_CHAT;
 			strcpy(message.recvName , "");
+			
 			printf("请输入聊天内容：\n");
-			setbuf(stdin , NULL);
-			scanf("%s" , message.content);
+			setbuf(stdin , NULL);			
+			fgets(message.content , MAX_LINE , stdin);
+			(message.content)[strlen(message.content) - 1] = '\0';
+
 			/*获得当前时间*/
 			time(&timep);
 			strcpy(message.msgTime , ctime(&timep));
@@ -155,21 +164,7 @@ void enterChat(User *user , int sockfd)
 			printf("请输入查看的聊天对象：\n");
 			setbuf(stdin , NULL);
 			scanf("%s" , str);
-			strcpy(message.recvName , str);
-			printf("直接显示（Y），接收文件（N），请输入 Y 或者 N：\n");
-			setbuf(stdin , NULL);
-			scanf("%c",&c);
-			while(c != 'Y' && c != 'N')
-			{
-				printf("未知操作，请重新输入！\n");
-				scanf("%c",&c);
-			}
-			/*选择直接显示聊天记录*/
-			if('Y' == c)
-				message.msgRet = NO;
-			/*代表选择接收文件*/			
-			else
-				message.msgRet = YES;
+			strcpy(message.recvName , str);			
 			memcpy(buf , &message , sizeof(message));
 			send(sockfd , buf , sizeof(buf) , 0);
 			break;

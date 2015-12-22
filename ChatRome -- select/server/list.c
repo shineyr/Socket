@@ -12,11 +12,13 @@
 参数：list--当前在线用户链表 elem--要插入的元素
 返回值：返回创建的链表
 ***************************************************/
-void insertNode(ListNode *list , User *user)
+ListNode* insertNode(ListNode *list , User *user)
 {
 	/*建立新节点*/
 	ListNode *node = (ListNode *)calloc(1, sizeof(ListNode));
+	
 	copyUser(&(node->user) , user);
+	
 	node->next = NULL;
 	if(list == NULL)
 	{			
@@ -30,6 +32,9 @@ void insertNode(ListNode *list , User *user)
 		}//while
 		p->next = node;
 	}//else
+
+	printf("更新在线列表！\n");
+	return list;	
 }
 
 /****************************************************
@@ -110,6 +115,7 @@ void displayList(ListNode *list)
 		while(p->next != NULL)
 		{
 			printf("%s --> ", p->user.userName);
+			p = p->next;
 		}//while
 		printf("%s\n", p->user.userName);
 	}//else

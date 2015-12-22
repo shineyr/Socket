@@ -32,16 +32,18 @@ int groupChat(Message *msg , int sockfd)
 	/*消息内容*/
 	Message message;	
 	memset(&message , 0 , sizeof(message));
-	
+	strcpy(message.sendName , (*msg).sendName);
+	strcpy(message.recvName , (*msg).recvName);
+	message.msgType = (*msg).msgType;
+
 	/*查看在线用户*/
 	p = userList;
-	if(p == NULL)
+	/*除了自己无人在线*/
+	if(p->next == NULL)
 	{
-		printf("当前无人在线！消息暂存！\n");
+		/*改变消息类型为RESULT*/
 		message.msgType = RESULT;
-		strcpy(message.content, stateMsg(ALL_NOT_ONLINE));
-		strcpy(message.sendName , (*msg).sendName);
-		strcpy(message.recvName , (*msg).recvName);
+		strcpy(message.content, stateMsg(ALL_NOT_ONLINE));	
 		memset(buf , 0 , MAX_LINE);
 		memcpy(buf , &message , sizeof(message));
 		send(sockfd , buf , sizeof(buf) , 0);
@@ -50,17 +52,17 @@ int groupChat(Message *msg , int sockfd)
 	/*向所有在线用户发送消息*/
 	else
 	{
-		strcpy(message.sendName , (*msg).sendName);
 		strcpy(message.recvName , "");
-		message.msgType = message.msgType;
 		strcpy(message.content , (*msg).content);
 		strcpy(message.msgTime , (*msg).msgTime);
-		while(p!=NULL && ((p->user).userName , message.sendName) != 0)
+		while(p!=NULL)
 		{
-			memset(buf , 0 , MAX_LINE);
-			memcpy(buf , &message , sizeof(message));
-			send((p->user).sockfd , buf , sizeof(buf) , 0);
-
+			if(strcmp((p->user).userName , message.sendName) != 0)
+			{
+				memset(buf , 0 , MAX_LINE);
+				memcpy(buf , &message , sizeof(message));
+				send((p->user).sockfd , buf , sizeof(buf) , 0);
+			}//else
 			p = p->next;
 		}//while
 		/*（1）打开数据库*/
@@ -70,14 +72,11 @@ int groupChat(Message *msg , int sockfd)
 			printf("unable open database!\n");
 			return FAILED;
 		}//if
-		printf("Opened database successfully.\n");
-
 		/*（2）执行插入操作*/
 		memset(sql , 0 , sizeof(sql));
 		sprintf(sql , "insert into Message(msgType , sendName , recvName , content , msgTime)\
 				values(%d,'%s','%s','%s', '%s');",message.msgType , message.sendName , 
 				message.recvName,message.content , message.msgTime);
-		printf("%s\n" , sql);
 
 		ret = sqlite3_prepare(db , sql , strlen(sql) , &stmt , &tail);	
 		if(ret != SQLITE_OK)
@@ -121,24 +120,25 @@ int personalChat(Message *msg , int sockfd)
 	/*消息内容*/
 	Message message;	
 	memset(&message , 0 , sizeof(message));	
-
+	strcpy(message.sendName , (*msg).sendName);
+	strcpy(message.recvName , (*msg).recvName);
+	message.msgType = (*msg).msgType;
 	/*消息发送对象和接收对象相同*/
-	if(strcmp(message.sendName , message.recvName) == 0)
+	if(strcmp((*msg).sendName , (*msg).recvName) == 0)
 	{
 		printf("消息不能发送到自己！\n");
+		/*改变消息类型为RESULT*/
 		message.msgType = RESULT;
 		strcpy(message.content, stateMsg(MESSAGE_SELF));
-		strcpy(message.sendName , (*msg).sendName);
-		strcpy(message.recvName , (*msg).recvName);
 		memset(buf , 0 , MAX_LINE);
 		memcpy(buf , &message , sizeof(message));
 		send(sockfd , buf , sizeof(buf) , 0);
 		return MESSAGE_SELF;
 	}//if
 
-	/*查看在线用户*/
+	/*查找接收信息用户*/
 	p = userList;
-	while(p!=NULL && ((p->user).userName , message.recvName) != 0)
+	while(p != NULL && strcmp((p->user).userName , (*msg).recvName) != 0)
 	{		
 		p = p->next;
 	}//while
@@ -146,19 +146,15 @@ int personalChat(Message *msg , int sockfd)
 	if(p == NULL)
 	{
 		printf("该用户不在线！\n");
+		/*改变消息类型为RESULT*/
 		message.msgType = RESULT;
 		strcpy(message.content, stateMsg(ID_NOT_ONLINE));
-		strcpy(message.sendName , (*msg).sendName);
-		strcpy(message.recvName , (*msg).recvName);
 		memset(buf , 0 , MAX_LINE);
 		memcpy(buf , &message , sizeof(message));
 		send(sockfd , buf , sizeof(buf) , 0);
 		return ID_NOT_ONLINE;
 	}//if
 	else{
-		strcpy(message.sendName , (*msg).sendName);
-		strcpy(message.recvName , (*msg).recvName);
-		message.msgType = message.msgType;
 		strcpy(message.content , (*msg).content);
 		strcpy(message.msgTime , (*msg).msgTime);
 		memset(buf , 0 , MAX_LINE);
@@ -173,8 +169,6 @@ int personalChat(Message *msg , int sockfd)
 			printf("unable open database!\n");
 			return FAILED;
 		}//if
-		printf("Opened database successfully.\n");
-
 		/*（2）执行插入操作*/
 		memset(sql , 0 , sizeof(sql));
 		sprintf(sql , "insert into Message(msgType , sendName , recvName , content , msgTime)\
@@ -216,34 +210,36 @@ int viewUserList(Message *msg , int sockfd)
 	/*消息内容*/
 	Message message;	
 	memset(&message , 0 , sizeof(message));
+	strcpy(message.sendName , (*msg).sendName);
+	strcpy(message.recvName , (*msg).recvName);
+	message.msgType = (*msg).msgType;
 	
 	/*查看在线用户*/
 	p = userList;
 	if(p == NULL)
 	{
-		printf("当前无人在线！消息暂存！\n");
+		/*改变消息类型为RESULT*/
 		message.msgType = RESULT;
 		strcpy(message.content, stateMsg(ALL_NOT_ONLINE));
-		strcpy(message.sendName , (*msg).sendName);
-		strcpy(message.recvName , (*msg).recvName);
 		memset(buf , 0 , MAX_LINE);
 		memcpy(buf , &message , sizeof(message));
 		send(sockfd , buf , sizeof(buf) , 0);
 		return ALL_NOT_ONLINE;
 	}//if
 	else{
-		strcpy(message.sendName , (*msg).sendName);
-		message.msgType = message.msgType;
+		/*否则消息类型不变*/
 		strcpy(message.content , "");
-		while(p!=NULL && ((p->user).userName , message.sendName) != 0)
+		while(p!=NULL)
 		{
 			strcat(message.content , "\t");
 			strcat(message.content , (p->user).userName);
-			strcat(message.content , "\t");
+	
+			p = p->next;
 		}//while
 		memset(buf , 0 , MAX_LINE);
 		memcpy(buf , &message , sizeof(message));
 		send(sockfd , buf , sizeof(buf) , 0);
+		printf("查看在线列表结果：%s\n", message.content);
 	}
 	return SUCCESS;
 }
@@ -256,6 +252,86 @@ int viewUserList(Message *msg , int sockfd)
 ****************************************************/
 int viewRecords(Message *msg , int sockfd)
 {
+	int ret;
+	
+	char buf[MAX_LINE] , record[MAX_LINE];
+	
+	/*声明数据库变量*/
+	sqlite3 *db;
+	char *errmsg = NULL;
+	char **dbRet;
+	int nRow , nCol , i , j , idx;
+
+	/*声明sql语句存储变量*/
+	char sql[128];
+
+	/*存储操作结果消息*/
+	Message message;
+	memset(&message , 0 , sizeof(message));
+	strcpy(message.sendName , (*msg).sendName);
+	/*判断是否接收群消息*/
+	if(strcmp( (*msg).recvName , "all") == 0)
+		strcpy(message.recvName , "");
+	else
+		strcpy(message.recvName , (*msg).recvName);
+	message.msgType = (*msg).msgType;
+
+	/*（1）打开数据库*/
+	ret = sqlite3_open(DB_NAME, &db);
+	if(ret != SQLITE_OK)
+	{
+		printf("unable open database.\n");
+		/*改变消息类型为RESULT*/
+		message.msgType = RESULT;
+		strcpy(message.content, stateMsg(FAILED));
+		memset(buf , 0 , MAX_LINE);
+		memcpy(buf , &message , sizeof(message));
+		send(sockfd , buf , sizeof(buf) , 0);
+		
+		return FAILED;
+	}//if
+
+	/*（2）读出两者的聊天记录，以二进制方式*/
+	memset(sql , 0 , sizeof(sql));
+	if(strcmp(message.recvName , "") == 0)
+		sprintf(sql , "select * from Message where recvName='%s' order by msgTime;",message.recvName);
+	else
+		sprintf(sql , "select * from Message where sendName='%s' and recvName='%s' or sendName='%s' and recvName='%s' order by msgTime;",message.sendName , message.recvName , message.recvName , message.sendName);
+	
+	
+	ret = sqlite3_get_table(db , sql , &dbRet , &nRow , &nCol , &errmsg);	
+	/*查询不成功*/
+	if(ret != SQLITE_OK)
+	{
+		sqlite3_close(db);
+		printf("database select fail!\n");
+		/*改变消息类型为RESULT*/
+		message.msgType = RESULT;
+		strcpy(message.content, stateMsg(FAILED));
+		memset(buf , 0 , MAX_LINE);
+		memcpy(buf , &message , sizeof(message));
+		send(sockfd , buf , sizeof(buf) , 0);		
+		return FAILED;		
+	}//if
+	
+	/*查询成功,dbRet 前面第一行数据是字段名称，从 nColumn 索引开始才是真正的数据*/
+	idx = nCol;
+	for(i=0; i<nRow; ++i)
+	{
+		memset(record , 0 , MAX_LINE);
+		sprintf(record , "%s\t%s\n\t%s\n\n", dbRet[idx+1] , dbRet[idx+4] , dbRet[idx+3]);
+		//printf("第%d条记录:%s\n",i,record);
+		idx = idx + nCol;
+		strcat(message.content , record);
+	}//for
+	message.content[strlen(message.content)-1] = '\0';	
+	/*关闭数据库*/
+	sqlite3_close(db);	
+	
+	/*直接发送控制台*/	
+	memset(buf , 0 , MAX_LINE);
+	memcpy(buf , &message , sizeof(message));
+	send(sockfd , buf , sizeof(buf) , 0);
 	return SUCCESS;
 }
 

@@ -41,8 +41,8 @@
 
 /*标志*/
 enum Flag{
-	YES,	/*代表被禁言，也代表接收聊天记录文件*/
-	NO		/*代表没有被禁言，也代表直接显示聊天记录*/
+	YES,	/*代表被禁言*/
+	NO		/*代表没有被禁言*/
 };
 
 /*定义服务器--客户端 消息传送类型*/
@@ -105,7 +105,10 @@ typedef struct _ListNode{
 
 
 /*定义在线用户链表*/
-ListNode *userList;
+extern ListNode *userList;
+
+/*server.c 客户请求处理函数*/
+extern void* handleRequest(int *fd);
 
 /*config.c文件函数声明*/
 extern char *stateMsg(int stateRet);
@@ -119,7 +122,7 @@ extern int viewUserList(Message *msg , int sockfd);
 extern int viewRecords(Message *msg , int sockfd);
 
 /*list.c文件函数声明*/
-extern void insertNode(ListNode *list , User *user);
+extern ListNode* insertNode(ListNode *list , User *user);
 extern int isOnLine(ListNode *list , User *user);
 extern void deleteNode(ListNode *list , User *user);
 extern void displayList(ListNode *list);

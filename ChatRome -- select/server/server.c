@@ -6,8 +6,8 @@
 
 #include "config.h"
 
-/*声明全局变量 -- 在线用户链表*/
-extern ListNode *userList;
+/*定义全局变量 -- 在线用户链表*/
+ListNode *userList = NULL;
 
 /*********************************************
 函数名：main
@@ -42,9 +42,6 @@ int main(void)
 
 	/*UserInfo*/
 	User user;	
-
-	//建立在线用户列表
-	userList = NULL;
 
 	/*(1) 创建套接字*/
 	if((listenfd = socket(AF_INET , SOCK_STREAM , 0)) == -1)
@@ -83,7 +80,10 @@ int main(void)
 		client_sockfd[i] = -1;
 	}//for
 
+	/*清空allset描述符集*/
 	FD_ZERO(&allset);
+
+	/*将监听描述符加到allset中*/
 	FD_SET(listenfd , &allset);
 
 	/*(6) 接收客户链接*/
@@ -91,8 +91,9 @@ int main(void)
 	{
 		rset = allset;
 		/*得到当前可读的文件描述符数*/
-		nready = select(maxfd+1 , &rset , NULL , NULL , NULL);
+		nready = select(maxfd+1 , &rset , NULL , NULL , 0);
 		
+		/*测试listenfd是否在rset描述符集中*/
 		if(FD_ISSET(listenfd , &rset))
 		{
 			/*接收客户端的请求*/
@@ -115,15 +116,13 @@ int main(void)
 				}//if
 			}//for
 
-			printf("i = %d\n" , i);
-			printf("FD_SETSIZE = %d\n" , FD_SETSIZE);
 			if(i == FD_SETSIZE)
 			{		
 				perror("too many connection.\n");
 				exit(1);
 			}//if
 
-			/* 设置连接集合 */
+			/* 将来自客户的连接connfd加入描述符集 */
 			FD_SET(connfd , &allset);
 
 			/*新的连接描述符 -- for select*/
@@ -148,71 +147,92 @@ int main(void)
 			{
 				/*如果当前没有可以读的套接字，退出循环*/
 				if(--nready < 0)
-					break;
+					break;							
+				pthread_create(&pid , NULL , (void *)handleRequest , (void *)&sockfd);
 				
-				memset(buf , 0 , MAX_LINE);
-				memset(&message , 0 , sizeof(message));
-				//接收用户发送的消息
-				n = recv(sockfd , buf , sizeof(buf)+1 , 0);
-				if(0 == n)
-				{
-					//关闭当前描述符，并清空描述符数组 
-					fflush(stdout);
-					close(sockfd);
-					FD_CLR(sockfd , &allset);
-					client_sockfd[i] = -1;	
-					printf("来自%s的退出请求！\n", inet_ntoa(message.sendAddr.sin_addr));					
-				}//if				
-				else{
-					memcpy(&message , buf , sizeof(buf));				
-					printf("server msgType = %d\n" , message.msgType);
-					switch(message.msgType)
-					{
-					case REGISTER:						
-						{
-							printf("来自%s的注册请求！\n", inet_ntoa(message.sendAddr.sin_addr));
-							ret = registerUser(&message , sockfd);
-							memset(&message , 0 , sizeof(message));
-							message.msgType = RESULT;
-							message.msgRet = ret;
-							strcpy(message.content , stateMsg(ret));		
-							memset(buf , 0 , MAX_LINE);
-							memcpy(buf , &message , sizeof(message));						
-							/*发送操作结果消息*/
-							send(sockfd , buf , sizeof(buf) , 0);
-							printf("注册：%s\n", stateMsg(ret));	
-							break;
-						}//case
-					case LOGIN:
-						{
-							printf("来自%s的登陆请求！\n", inet_ntoa(message.sendAddr.sin_addr));
-							ret = loginUser(&message , sockfd);							
-							memset(&message , 0 , sizeof(message));
-							message.msgType = RESULT;
-							message.msgRet = ret;
-							strcpy(message.content , stateMsg(ret));							
-							memset(buf , 0 , MAX_LINE);
-							memcpy(buf , &message , sizeof(message));						
-							/*发送操作结果消息*/
-							send(sockfd , buf , sizeof(buf) , 0);
-							printf("登录：%s\n", stateMsg(ret));
-							/*进入服务器处理聊天界面*/
-							enterChat(&sockfd);
-							//pthread_create(&pid , NULL , (void *)enterChat , (void *)&sockfd);					
-							break;
-						}//case			
-					default:
-						printf("unknown operation.\n");
-						break;
-					}//switch					
-				}//else				
 			}//if
-			/*清除处理完的链接*/
-			close(sockfd);
+			/*清除处理完的链接描述符*/
 			FD_CLR(sockfd , &allset);
 			client_sockfd[i] = -1;			
 		}//for
-	}//for服务器接收请求死循环
+	}//while
+		
 	close(listenfd);
 	return 0;
+}
+
+/*处理客户请求的线程*/
+void* handleRequest(int *fd)
+{
+	int sockfd , ret , n;
+	/*声明消息变量*/
+	Message message;
+	/*声明消息缓冲区*/
+	char buf[MAX_LINE];
+
+	sockfd = *fd;
+
+	memset(buf , 0 , MAX_LINE);
+	memset(&message , 0 , sizeof(message));
+
+	//接收用户发送的消息
+	n = recv(sockfd , buf , sizeof(buf)+1 , 0);
+	if(n <= 0)
+	{
+		//关闭当前描述符，并清空描述符数组 
+		fflush(stdout);
+		close(sockfd);
+		*fd = -1;
+		printf("来自%s的退出请求！\n", inet_ntoa(message.sendAddr.sin_addr));		
+		return NULL;			
+	}//if				
+	else{
+		memcpy(&message , buf , sizeof(buf));				
+		/*为每个客户操作链接创建一个线程*/					
+		switch(message.msgType)
+		{
+		case REGISTER:						
+			{
+				printf("来自%s的注册请求！\n", inet_ntoa(message.sendAddr.sin_addr));
+				ret = registerUser(&message , sockfd);
+				memset(&message , 0 , sizeof(message));
+				message.msgType = RESULT;
+				message.msgRet = ret;
+				strcpy(message.content , stateMsg(ret));		
+				memset(buf , 0 , MAX_LINE);
+				memcpy(buf , &message , sizeof(message));						
+				/*发送操作结果消息*/
+				send(sockfd , buf , sizeof(buf) , 0);
+				printf("注册：%s\n", stateMsg(ret));	
+				close(sockfd);
+				*fd = -1;
+				return NULL;
+				break;
+			}//case
+		case LOGIN:
+			{
+				printf("来自%s的登陆请求！\n", inet_ntoa(message.sendAddr.sin_addr));
+				ret = loginUser(&message , sockfd);							
+				memset(&message , 0 , sizeof(message));
+				message.msgType = RESULT;
+				message.msgRet = ret;
+				strcpy(message.content , stateMsg(ret));							
+				memset(buf , 0 , MAX_LINE);
+				memcpy(buf , &message , sizeof(message));						
+				/*发送操作结果消息*/
+				send(sockfd , buf , sizeof(buf) , 0);
+				printf("登录：%s\n", stateMsg(ret));
+				/*进入服务器处理聊天界面*/
+				enterChat(&sockfd);												
+				break;
+			}//case			
+		default:
+			printf("unknown operation.\n");
+			break;
+		}//switch					
+	}//else				
+
+	close(sockfd);
+	*fd = -1;
+	return NULL;
 }

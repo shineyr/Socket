@@ -65,7 +65,6 @@ int main(int argc , char *argv[])
 		}//if	
 
 		/*(4) 显示聊天室主界面*/		
-		printf("sockfd = %d\n",sockfd);
 		mainInterface();	
 		setbuf(stdin,NULL); //是linux中的C函数，主要用于打开和关闭缓冲机制
 		scanf("%d",&choice);

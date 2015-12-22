@@ -32,7 +32,6 @@ int registerUser(Message *msg , int sockfd)
 
 	/*存储操作结果消息*/
 	Message message;
-	
 
 	/*接收用户注册信息*/
 	recv(sockfd , buf , sizeof(user) , 0);
@@ -40,8 +39,6 @@ int registerUser(Message *msg , int sockfd)
 	memcpy(&user , buf , sizeof(buf));
 	user.userAddr = (*msg).sendAddr;
 	user.sockfd = sockfd;
-	printf("user.userName = %s\n" , user.userName);	
-	printf("user.password = %s\n" , user.password);
 	
 	if(strlen(user.userName) > 20)
 	{	
@@ -89,8 +86,6 @@ int registerUser(Message *msg , int sockfd)
 	sprintf(sql , "insert into User(userName , password , userAddr , sockfd , speak , registerTime)\
 			values('%s','%s','%s',%d, %d , '%s');",user.userName , user.password , 
 			inet_ntoa(user.userAddr.sin_addr),user.sockfd , YES, asctime(gmtime(&timeNow)));
-
-	printf("%s\n" , sql);
 
 	ret = sqlite3_prepare(db , sql , strlen(sql) , &stmt , &tail);	
 	if(ret != SQLITE_OK)
